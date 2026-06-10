@@ -6,6 +6,7 @@ import Home from './pages/Home'
 import CriarBolao from './pages/CriarBolao'
 import BolaoPage from './pages/Bolao'
 import AdminPage from './pages/Admin'
+import MeusBoloes from './pages/MeusBoloes'
 
 export const AuthContext = createContext(null)
 export const useAuth = () => useContext(AuthContext)
@@ -39,6 +40,9 @@ function App() {
           <Route path="/bolao/:slug" element={<BolaoPage />} />
           <Route path="/admin/:slug" element={
             <ProtectedRoute><AdminPage /></ProtectedRoute>
+          } />
+          <Route path="/meus-boloes" element={
+            <ProtectedRoute><MeusBoloes /></ProtectedRoute>
           } />
         </Routes>
       </BrowserRouter>

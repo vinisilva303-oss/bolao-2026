@@ -60,6 +60,10 @@ export const TIMES = {
   UZB: { nome: 'Uzbequistão', bandeira: '🇺🇿', conf: 'AFC' },
   // OFC
   NZL: { nome: 'Nova Zelândia', bandeira: '🇳🇿', conf: 'OFC' },
+  // Outros classificados
+  CHI: { nome: 'Chile',         bandeira: '🇨🇱', conf: 'CONMEBOL' },
+  GUA: { nome: 'Guatemala',     bandeira: '🇬🇹', conf: 'CONCACAF' },
+  GRE: { nome: 'Grécia',        bandeira: '🇬🇷', conf: 'UEFA' },
 }
 
 // ── Grupos ─────────────────────────────────────────────────
@@ -74,8 +78,8 @@ export const GRUPOS = {
   G: { times: ['ALE', 'COS', 'MLI', 'IRA'] },
   H: { times: ['HOL', 'USA', 'POL', 'UZB'] },
   I: { times: ['ITA', 'URU', 'GHA', 'SAU'] },
-  J: { times: ['BEL', 'MEX', 'EGI', 'JOR'] },
-  K: { times: ['POR', 'VEN', 'NIG', 'IRA2'] },
+  J: { times: ['BEL', 'GUA', 'EGI', 'JOR'] },
+  K: { times: ['GRE', 'VEN', 'NIG', 'IRA2'] },
   L: { times: ['DIN', 'PAR', 'CMR', 'AUT'] },
 }
 
