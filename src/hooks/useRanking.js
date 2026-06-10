@@ -1,24 +1,29 @@
 import { useState, useEffect } from 'react'
-import { ouvirTodosPalpites, ouvirResultados, ouvirParticipantes } from '../lib/firestore'
+import { ouvirTodosPalpites, ouvirResultados, ouvirParticipantes, ouvirResultadosGlobais } from '../lib/firestore'
 import { calcularPontos, AGENDA_GRUPOS } from '../lib/dados'
 
 export function useRanking(slug) {
   const [participantes, setParticipantes] = useState([])
   const [todosPalpites, setTodosPalpites] = useState({})
-  const [resultados, setResultados] = useState({})
+  const [resultadosBolao, setResultadosBolao] = useState({})     // admin inseriu manualmente
+  const [resultadosGlobais, setResultadosGlobais] = useState({}) // API-Football auto
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     if (!slug) return
     let loaded = 0
-    const check = () => { if (++loaded === 3) setLoading(false) }
+    const check = () => { if (++loaded === 4) setLoading(false) }
 
     const u1 = ouvirParticipantes(slug, (p) => { setParticipantes(p); check() })
     const u2 = ouvirTodosPalpites(slug, (p) => { setTodosPalpites(p); check() })
-    const u3 = ouvirResultados(slug, (r) => { setResultados(r); check() })
+    const u3 = ouvirResultados(slug, (r) => { setResultadosBolao(r); check() })
+    const u4 = ouvirResultadosGlobais((r) => { setResultadosGlobais(r); check() })
 
-    return () => { u1(); u2(); u3() }
+    return () => { u1(); u2(); u3(); u4() }
   }, [slug])
+
+  // Resultado por bolão tem prioridade sobre o global (admin pode corrigir)
+  const resultados = { ...resultadosGlobais, ...resultadosBolao }
 
   const ranking = participantes
     .map((p) => {
@@ -40,5 +45,5 @@ export function useRanking(slug) {
     })
     .sort((a, b) => b.pontos - a.pontos || b.exatos - a.exatos)
 
-  return { ranking, loading }
+  return { ranking, loading, resultados }
 }

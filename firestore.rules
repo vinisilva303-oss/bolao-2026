@@ -27,5 +27,12 @@ service cloud.firestore {
         allow write: if request.auth.uid == get(/databases/$(database)/documents/boloes/$(bolaoId)).data.ownerId;
       }
     }
+
+    // Resultados globais — escritos pela Cloud Function (admin SDK ignora regras)
+    // Leitura pública; escrita só via backend
+    match /resultados_globais/{jogoId} {
+      allow read: if true;
+      allow write: if false; // apenas Cloud Function via Admin SDK
+    }
   }
 }

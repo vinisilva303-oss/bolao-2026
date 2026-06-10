@@ -136,3 +136,11 @@ export function ouvirResultados(slug, callback) {
     callback(resultados)
   })
 }
+
+// ── Resultados Globais (preenchidos pela Cloud Function via API-Football) ──
+export function ouvirResultadosGlobais(callback) {
+  return onSnapshot(collection(db, 'resultados_globais'), (snap) => {
+    const resultados = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]))
+    callback(resultados)
+  })
+}

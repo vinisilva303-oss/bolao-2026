@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../App'
 import { GRUPOS, TIMES, gerarJogosGrupo } from '../lib/dados'
-import { salvarPalpites, ouvirPalpites, entrarNoBolao } from '../lib/firestore'
+import { salvarPalpites, ouvirPalpites, entrarNoBolao, ouvirParticipantes } from '../lib/firestore'
 
 function getParticipanteId(slug, userId) {
   if (userId) return userId
@@ -13,17 +13,19 @@ function getParticipanteId(slug, userId) {
   return id
 }
 
+const LIMITE_FREE = 10
+
 export default function Palpites({ slug, bolao }) {
   const { user } = useAuth()
   const [participanteId] = useState(() => getParticipanteId(slug, user?.uid))
   const [nome, setNome] = useState('')
   const [nomeConfirmado, setNomeConfirmado] = useState(false)
   const [palpites, setPalpites] = useState({})
+  const [participantes, setParticipantes] = useState([])
   const [salvando, setSalvando] = useState(false)
   const [salvo, setSalvo] = useState(false)
   const [grupoAberto, setGrupoAberto] = useState('A')
 
-  // Carrega palpites existentes e nome salvo
   useEffect(() => {
     const nomeLocal = localStorage.getItem(`bolao_nome_${slug}`)
     if (nomeLocal) { setNome(nomeLocal); setNomeConfirmado(true) }
@@ -31,11 +33,14 @@ export default function Palpites({ slug, bolao }) {
   }, [slug, user])
 
   useEffect(() => {
+    return ouvirParticipantes(slug, setParticipantes)
+  }, [slug])
+
+  useEffect(() => {
     if (!participanteId || !nomeConfirmado) return
-    const unsub = ouvirPalpites(slug, participanteId, (dados) => {
+    return ouvirPalpites(slug, participanteId, (dados) => {
       setPalpites((prev) => ({ ...prev, ...dados }))
     })
-    return unsub
   }, [slug, participanteId, nomeConfirmado])
 
   const setPlacar = useCallback((jogoId, lado, valor) => {
@@ -46,6 +51,9 @@ export default function Palpites({ slug, bolao }) {
     }))
   }, [])
 
+  const jaParticipando = participantes.some((p) => p.id === participanteId)
+  const bolaoLotado = bolao.plan === 'free' && participantes.length >= LIMITE_FREE && !jaParticipando
+
   async function confirmarNome(e) {
     e.preventDefault()
     if (!nome.trim()) return
@@ -54,13 +62,15 @@ export default function Palpites({ slug, bolao }) {
   }
 
   async function salvar() {
+    if (bolaoLotado) return
     setSalvando(true)
     setSalvo(false)
     try {
       await entrarNoBolao(slug, { id: participanteId, name: nome.trim() || 'Anônimo' })
-      // Filtra só jogos com os dois placares preenchidos
       const palpitesValidos = Object.fromEntries(
-        Object.entries(palpites).filter(([, v]) => v.g1 !== '' && v.g1 !== undefined && v.g2 !== '' && v.g2 !== undefined)
+        Object.entries(palpites).filter(
+          ([, v]) => v?.g1 !== '' && v?.g1 !== undefined && v?.g2 !== '' && v?.g2 !== undefined
+        )
       )
       await salvarPalpites(slug, participanteId, palpitesValidos)
       setSalvo(true)
@@ -77,39 +87,60 @@ export default function Palpites({ slug, bolao }) {
     (p) => p?.g1 !== '' && p?.g1 !== undefined && p?.g2 !== '' && p?.g2 !== undefined
   ).length
 
-  // Tela de entrada do nome
   if (!nomeConfirmado) {
     return (
       <div style={{ maxWidth: 400, margin: '2rem auto' }}>
         <div className="card" style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>⚽</div>
           <h2 style={{ marginBottom: '0.5rem' }}>Entrar no bolão</h2>
-          <p style={{ color: 'var(--texto-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
-            Como você quer aparecer no ranking?
-          </p>
-          <form onSubmit={confirmarNome}>
-            <div className="form-group">
-              <input
-                type="text"
-                placeholder="Seu nome ou apelido"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                maxLength={40}
-                autoFocus
-              />
+          {bolaoLotado ? (
+            <div>
+              <p style={{ color: 'var(--erro)', marginBottom: '1rem' }}>
+                Este bolão atingiu o limite de <strong>{LIMITE_FREE} participantes</strong> do plano Free.
+              </p>
+              <p style={{ color: 'var(--texto-muted)', fontSize: '0.85rem' }}>
+                Peça ao dono para fazer upgrade para o plano Pro e liberar vagas ilimitadas.
+              </p>
             </div>
-            <button type="submit" className="btn-primario" style={{ width: '100%' }} disabled={!nome.trim()}>
-              Entrar e palpitar →
-            </button>
-          </form>
+          ) : (
+            <>
+              <p style={{ color: 'var(--texto-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+                Como você quer aparecer no ranking?
+                {bolao.plan === 'free' && (
+                  <span style={{ display: 'block', marginTop: '0.375rem', fontSize: '0.8rem', color: 'var(--texto-muted)' }}>
+                    Vagas: {participantes.length}/{LIMITE_FREE} (plano Free)
+                  </span>
+                )}
+              </p>
+              <form onSubmit={confirmarNome}>
+                <div className="form-group">
+                  <input type="text" placeholder="Seu nome ou apelido" value={nome} onChange={(e) => setNome(e.target.value)} maxLength={40} autoFocus />
+                </div>
+                <button type="submit" className="btn-primario" style={{ width: '100%' }} disabled={!nome.trim()}>
+                  Entrar e palpitar →
+                </button>
+              </form>
+            </>
+          )}
         </div>
+      </div>
+    )
+  }
+
+  // Bolão lotado para usuário já na tela
+  if (bolaoLotado) {
+    return (
+      <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
+        <div style={{ fontSize: '2.5rem', marginBottom: '0.75rem' }}>🔒</div>
+        <h2 style={{ marginBottom: '0.5rem' }}>Bolão lotado</h2>
+        <p style={{ color: 'var(--texto-muted)' }}>Limite de {LIMITE_FREE} participantes atingido no plano Free.</p>
       </div>
     )
   }
 
   return (
     <div>
-      {/* Cabeçalho do participante */}
+      {/* Cabeçalho */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
           <span style={{ fontWeight: 600 }}>Olá, {nome}!</span>
@@ -117,31 +148,33 @@ export default function Palpites({ slug, bolao }) {
             {totalPreenchidos} jogos preenchidos
           </span>
         </div>
-        <button
-          onClick={() => setNomeConfirmado(false)}
-          style={{ background: 'none', color: 'var(--texto-muted)', padding: '0.25rem 0.5rem', fontSize: '0.8rem', border: '1px solid var(--borda)', borderRadius: 6 }}
-        >
-          Trocar nome
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          {bolao.plan === 'free' && (
+            <span style={{ fontSize: '0.75rem', color: 'var(--texto-muted)' }}>
+              {participantes.length}/{LIMITE_FREE} participantes
+            </span>
+          )}
+          <button
+            onClick={() => setNomeConfirmado(false)}
+            style={{ background: 'none', color: 'var(--texto-muted)', padding: '0.25rem 0.5rem', fontSize: '0.8rem', border: '1px solid var(--borda)', borderRadius: 6, cursor: 'pointer' }}
+          >
+            Trocar nome
+          </button>
+        </div>
       </div>
 
-      {/* Grupos em abas horizontais */}
+      {/* Abas de grupos */}
       <div style={{ display: 'flex', gap: '0.25rem', overflowX: 'auto', marginBottom: '1rem', paddingBottom: '0.25rem' }}>
         {Object.keys(GRUPOS).map((g) => (
           <button
             key={g}
             onClick={() => setGrupoAberto(g)}
             style={{
-              flexShrink: 0,
-              padding: '0.375rem 0.75rem',
-              borderRadius: 6,
-              border: '1px solid',
+              flexShrink: 0, padding: '0.375rem 0.75rem', borderRadius: 6, border: '1px solid',
               borderColor: grupoAberto === g ? 'var(--verde)' : 'var(--borda)',
               background: grupoAberto === g ? 'var(--verde)' : 'transparent',
               color: grupoAberto === g ? '#fff' : 'var(--texto-muted)',
-              fontWeight: grupoAberto === g ? 600 : 400,
-              fontSize: '0.85rem',
-              cursor: 'pointer',
+              fontWeight: grupoAberto === g ? 600 : 400, fontSize: '0.85rem', cursor: 'pointer',
             }}
           >
             {g}
@@ -149,17 +182,12 @@ export default function Palpites({ slug, bolao }) {
         ))}
       </div>
 
-      {/* Jogos do grupo selecionado */}
-      <GrupoJogos
-        grupoId={grupoAberto}
-        palpites={palpites}
-        setPlacar={setPlacar}
-      />
+      <GrupoJogos grupoId={grupoAberto} palpites={palpites} setPlacar={setPlacar} />
 
       {/* Botão salvar fixo */}
       <div style={{ position: 'sticky', bottom: 0, background: 'var(--bg)', paddingTop: '0.75rem', paddingBottom: '0.75rem', borderTop: '1px solid var(--borda)', marginTop: '1rem' }}>
         <button
-          className={salvo ? 'btn-primario' : 'btn-primario'}
+          className="btn-primario"
           style={{ width: '100%', fontSize: '1.05rem', background: salvo ? 'var(--sucesso)' : undefined }}
           onClick={salvar}
           disabled={salvando}
@@ -184,7 +212,6 @@ function GrupoJogos({ grupoId, palpites, setPlacar }) {
           </span>
         ))}
       </div>
-
       {[1, 2, 3].map((rodada) => (
         <div key={rodada} style={{ marginBottom: '1rem' }}>
           <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--texto-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
@@ -201,19 +228,9 @@ function GrupoJogos({ grupoId, palpites, setPlacar }) {
                     <div style={{ fontSize: '0.8rem' }}>{TIMES[jogo.t1]?.nome || jogo.t1}</div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-                    <input
-                      type="number" min="0" max="20"
-                      value={p.g1 ?? ''}
-                      onChange={(e) => setPlacar(jogo.id, 'g1', e.target.value)}
-                      style={{ width: 44, textAlign: 'center', padding: '0.375rem' }}
-                    />
+                    <input type="number" min="0" max="20" value={p.g1 ?? ''} onChange={(e) => setPlacar(jogo.id, 'g1', e.target.value)} style={{ width: 44, textAlign: 'center', padding: '0.375rem' }} />
                     <span style={{ color: 'var(--texto-muted)', fontWeight: 700 }}>×</span>
-                    <input
-                      type="number" min="0" max="20"
-                      value={p.g2 ?? ''}
-                      onChange={(e) => setPlacar(jogo.id, 'g2', e.target.value)}
-                      style={{ width: 44, textAlign: 'center', padding: '0.375rem' }}
-                    />
+                    <input type="number" min="0" max="20" value={p.g2 ?? ''} onChange={(e) => setPlacar(jogo.id, 'g2', e.target.value)} style={{ width: 44, textAlign: 'center', padding: '0.375rem' }} />
                   </div>
                   <div style={{ textAlign: 'left', fontSize: '0.9rem', lineHeight: 1.3 }}>
                     <div>{TIMES[jogo.t2]?.bandeira}</div>
