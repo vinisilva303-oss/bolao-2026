@@ -1,45 +1,42 @@
 const { onSchedule } = require('firebase-functions/v2/scheduler')
 const { onRequest } = require('firebase-functions/v2/https')
+const { defineSecret } = require('firebase-functions/params')
 const admin = require('firebase-admin')
 const axios = require('axios')
 
 admin.initializeApp()
 const db = admin.firestore()
 
+// Secrets gerenciados pelo Firebase Secret Manager
+const apifootballKey = defineSecret('APIFOOTBALL_KEY')
+const adminKey = defineSecret('ADMIN_KEY')
+
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // FIXTURE_MAP: ID da API-Football → ID interno do bolão
 //
 // Como obter os IDs:
-//   1. Faça deploy e chame: GET /listarFixtureIds (com X-Admin-Key)
+//   1. Apos o deploy, chame: GET /listarFixtureIds
+//      Header: X-Admin-Key: <valor do secret ADMIN_KEY>
 //   2. Para cada fixture, pegue o campo "id"
-//   3. Mapeie para o ID interno (ex: 'A1', 'B3', 'C6'...)
+//   3. Mapeie para o ID interno (A1-A6, B1-B6 ... L1-L6)
 //
-// Formato dos IDs internos:
-//   Fase de grupos: A1-A6, B1-B6 ... L1-L6
-//   Rodada 32: R32_1 ... R32_16
-//   Oitavas:   R16_1 ... R16_8
-//   Quartas:   QF_1 ... QF_4
-//   Semis:     SF_1, SF_2
-//   3° lugar:  3RD   |   Final: FIN
-//
-// Variaveis de ambiente (functions/.env):
-//   APIFOOTBALL_KEY=sua_chave_rapidapi
-//   ADMIN_KEY=senha_para_listarFixtureIds
+// Fase de grupos: A1-A6 ... L1-L6
+// Mata-mata:      R32_1..16, R16_1..8, QF_1..4, SF_1..2, 3RD, FIN
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 const FIXTURE_MAP = {
-  // exemplo — substituir pelos IDs reais:
+  // Preencher apos chamar listarFixtureIds:
   // 1234567: 'A1',
   // 1234568: 'A2',
 }
 
 exports.atualizarResultados = onSchedule(
-  { schedule: 'every 60 minutes', timeZone: 'America/Sao_Paulo' },
+  {
+    schedule: 'every 60 minutes',
+    timeZone: 'America/Sao_Paulo',
+    secrets: [apifootballKey],
+  },
   async () => {
-    const API_KEY = process.env.APIFOOTBALL_KEY
-    if (!API_KEY) {
-      console.error('[atualizarResultados] APIFOOTBALL_KEY nao definida em functions/.env')
-      return
-    }
+    const API_KEY = apifootballKey.value()
 
     if (!Object.keys(FIXTURE_MAP).length) {
       console.warn('[atualizarResultados] FIXTURE_MAP vazio — nenhum jogo sera atualizado.')
@@ -106,42 +103,38 @@ exports.atualizarResultados = onSchedule(
 )
 
 // Funcao HTTP para listar IDs brutos da API e montar o FIXTURE_MAP.
-// Uso: GET https://REGIAO-PROJETO.cloudfunctions.net/listarFixtureIds
-//      Header: X-Admin-Key: <ADMIN_KEY do .env>
-exports.listarFixtureIds = onRequest(async (req, res) => {
-  const adminKey = process.env.ADMIN_KEY
-  if (!adminKey || req.headers['x-admin-key'] !== adminKey) {
-    res.status(401).json({ error: 'Nao autorizado' })
-    return
+// GET https://us-central1-bolao-copa-2026-28714.cloudfunctions.net/listarFixtureIds
+// Header: X-Admin-Key: <valor do secret ADMIN_KEY>
+exports.listarFixtureIds = onRequest(
+  { secrets: [adminKey, apifootballKey] },
+  async (req, res) => {
+    if (req.headers['x-admin-key'] !== adminKey.value()) {
+      res.status(401).json({ error: 'Nao autorizado' })
+      return
+    }
+
+    try {
+      const response = await axios.get('https://api-football-v1.p.rapidapi.com/v3/fixtures', {
+        params: { league: '1', season: '2026' },
+        headers: {
+          'X-RapidAPI-Key': apifootballKey.value(),
+          'X-RapidAPI-Host': 'api-football-v1.p.rapidapi.com',
+        },
+        timeout: 15000,
+      })
+
+      const fixtures = response.data.response.map((f) => ({
+        id: f.fixture.id,
+        date: f.fixture.date,
+        home: f.teams.home.name,
+        away: f.teams.away.name,
+        status: f.fixture.status.short,
+        goals: f.goals,
+      }))
+
+      res.json({ total: fixtures.length, fixtures })
+    } catch (err) {
+      res.status(500).json({ error: err.message })
+    }
   }
-
-  const apiKey = process.env.APIFOOTBALL_KEY
-  if (!apiKey) {
-    res.status(500).json({ error: 'APIFOOTBALL_KEY nao definida' })
-    return
-  }
-
-  try {
-    const response = await axios.get('https://api-football-v1.p.rapidapi.com/v3/fixtures', {
-      params: { league: '1', season: '2026' },
-      headers: {
-        'X-RapidAPI-Key': apiKey,
-        'X-RapidAPI-Host': 'api-football-v1.p.rapidapi.com',
-      },
-      timeout: 15000,
-    })
-
-    const fixtures = response.data.response.map((f) => ({
-      id: f.fixture.id,
-      date: f.fixture.date,
-      home: f.teams.home.name,
-      away: f.teams.away.name,
-      status: f.fixture.status.short,
-      goals: f.goals,
-    }))
-
-    res.json({ total: fixtures.length, fixtures })
-  } catch (err) {
-    res.status(500).json({ error: err.message })
-  }
-})
+)
