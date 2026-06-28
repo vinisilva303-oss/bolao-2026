@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   GRUPOS, TIMES, gerarJogosGrupo,
-  FASES_MATA_MATA, BRACKET_LABELS, KICKOFF_MAP, formatarHorarioBRT,
+  FASES_MATA_MATA, BRACKET_LABELS, BRACKET_CODES, KICKOFF_MAP, formatarHorarioBRT,
 } from '../lib/dados'
 import Flag from './Flag'
 import {
@@ -10,7 +10,7 @@ import {
 } from '../lib/firestore'
 
 export default function AdminComponent({ slug, bolao }) {
-  const [aba, setAba] = useState('grupos')
+  const [aba, setAba] = useState('matamata')
   const [salvandoCenario, setSalvandoCenario] = useState(false)
   const [resultados, setResultados] = useState({})
   const [mataMataTeams, setMataMataTeams] = useState({})
@@ -379,11 +379,12 @@ function MataMataAdmin({ fase, resultados, mataMataTeams, edicao, teamsEdit, set
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
       {fase.jogos.map((jogoId) => {
         const labels    = BRACKET_LABELS[jogoId] || ['Time A', 'Time B']
+        const known     = BRACKET_CODES[jogoId]
         const saved     = mataMataTeams[jogoId]
         const edit      = teamsEdit[jogoId] || {}
-        const t1Cod     = edit.t1 ?? saved?.t1 ?? ''
-        const t2Cod     = edit.t2 ?? saved?.t2 ?? ''
-        const teamsSaved = !!(saved?.t1 && saved?.t2)
+        const t1Cod     = edit.t1 ?? saved?.t1 ?? known?.[0] ?? ''
+        const t2Cod     = edit.t2 ?? saved?.t2 ?? known?.[1] ?? ''
+        const teamsSaved = !!(t1Cod && t2Cod)
         const t1Nome    = t1Cod ? (TIMES[t1Cod]?.nome || t1Cod) : labels[0]
         const t2Nome    = t2Cod ? (TIMES[t2Cod]?.nome || t2Cod) : labels[1]
         const kickoff   = KICKOFF_MAP[jogoId]
@@ -420,8 +421,8 @@ function MataMataAdmin({ fase, resultados, mataMataTeams, edicao, teamsEdit, set
             {teamsSaved && (
               <ResultadoCard
                 jogoId={jogoId}
-                t1Cod={saved.t1} t1Nome={t1Nome}
-                t2Cod={saved.t2} t2Nome={t2Nome}
+                t1Cod={t1Cod} t1Nome={t1Nome}
+                t2Cod={t2Cod} t2Nome={t2Nome}
                 edicao={e} isSaved={isSaved} setValor={setValor}
               />
             )}
