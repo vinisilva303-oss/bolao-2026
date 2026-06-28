@@ -401,23 +401,6 @@ function MataMataAdmin({ fase, resultados, mataMataTeams, edicao, teamsEdit, set
               {horarioBRT && <span style={{ fontSize: '0.7rem', color: 'var(--texto-muted)' }}>{horarioBRT} BRT</span>}
             </div>
 
-            {/* Seleção de times */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '0.5rem', alignItems: 'center', marginBottom: '0.625rem' }}>
-              <TeamSelect
-                value={t1Cod} placeholder={labels[0]}
-                onChange={(v) => setTeamEdit(jogoId, 't1', v)}
-                savedCod={saved?.t1}
-              />
-              <span style={{ textAlign: 'center', color: 'var(--texto-muted)', fontWeight: 700, fontSize: '0.85rem' }}>vs</span>
-              <TeamSelect
-                value={t2Cod} placeholder={labels[1]}
-                onChange={(v) => setTeamEdit(jogoId, 't2', v)}
-                savedCod={saved?.t2}
-                alignRight
-              />
-            </div>
-
-            {/* Resultado — só mostra quando times definidos */}
             {teamsSaved && (
               <ResultadoCard
                 jogoId={jogoId}
