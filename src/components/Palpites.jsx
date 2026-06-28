@@ -506,11 +506,6 @@ function EquipeCell({ cod, nome, label, origem, align, editarTimes, jogoId, lado
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: isRight ? 'flex-end' : 'flex-start', gap: '0.15rem' }}>
       <Flag cod={cod} size={24} />
       <div style={{ fontSize: '0.78rem', lineHeight: 1.2, textAlign: isRight ? 'right' : 'left' }}>{nome}</div>
-      {badge && (
-        <div style={{ fontSize: '0.6rem', color: badge.color, fontWeight: 600, lineHeight: 1 }}>
-          {badge.icon} {badge.text}
-        </div>
-      )}
     </div>
   ) : (
     <div style={{ fontSize: '0.75rem', color: 'var(--texto-muted)', textAlign: isRight ? 'right' : 'left', lineHeight: 1.3 }}>
