@@ -263,6 +263,26 @@ export const BRACKET_LABELS = {
   '3RD': ['Perd. SF_1', 'Perd. SF_2'],    FIN:  ['Venc. SF_1', 'Venc. SF_2'],
 }
 
+// Códigos de 3 letras dos times da R32 — alimenta as bandeiras na Agenda
+export const BRACKET_CODES = {
+  R32_01: ['RSA', 'CAN'],
+  R32_02: ['BRA', 'JPN'],
+  R32_03: ['ALE', 'PAR'],
+  R32_04: ['HOL', 'MAR'],
+  R32_05: ['CIV', 'NOR'],
+  R32_06: ['FRA', 'SWE'],
+  R32_07: ['MEX', 'ECU'],
+  R32_08: ['ENG', 'CGO'],
+  R32_09: ['BEL', 'SEN'],
+  R32_10: ['USA', 'BIH'],
+  R32_11: ['ESP', 'AUT'],
+  R32_12: ['POR', 'CRO'],
+  R32_13: ['SUI', 'ALG'],
+  R32_14: ['AUS', 'EGI'],
+  R32_15: ['COL', 'GHA'],
+  R32_16: ['ARG', 'CPV'],
+}
+
 // ── Cenário "Palpite Antecipado" — janelas de tempo ────────
 // Janela 1: antes do primeiro jogo (grupos editáveis, mata-mata editável com inferência)
 // Janela 2: grupos → R32 start (grupos travados, mata-mata editável com times reais)

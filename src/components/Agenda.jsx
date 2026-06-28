@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { GRUPOS, TIMES, gerarJogosGrupo, formatarHorarioBRT, FASES_MATA_MATA, BRACKET_LABELS, KICKOFF_MAP } from '../lib/dados'
+import { GRUPOS, TIMES, gerarJogosGrupo, formatarHorarioBRT, FASES_MATA_MATA, BRACKET_LABELS, BRACKET_CODES, KICKOFF_MAP } from '../lib/dados'
 import { useNow } from '../lib/useNow'
 import Flag from './Flag'
 
@@ -70,8 +70,12 @@ function AgendaCronologica({ now, hojeStr, onJogoClick, palpites }) {
       for (const jogoId of fase.jogos) {
         const kickoff = KICKOFF_MAP[jogoId]
         const labels  = BRACKET_LABELS[jogoId] || ['Time A', 'Time B']
+        const codes   = BRACKET_CODES[jogoId]
         lista.push({
-          id: jogoId, t1: null, t2: null, kickoff,
+          id: jogoId,
+          t1: codes ? codes[0] : null,
+          t2: codes ? codes[1] : null,
+          kickoff,
           t1Label: labels[0], t2Label: labels[1],
           label: `${fase.nome} · ${jogoId}`,
         })
@@ -167,11 +171,12 @@ function AgendaMataMata({ now, hojeStr, onJogoClick, palpites }) {
               {jogosFase.map((jogoId) => {
                 const kickoff = KICKOFF_MAP[jogoId]
                 const labels = BRACKET_LABELS[jogoId] || ['Time A', 'Time B']
+                const codes  = BRACKET_CODES[jogoId]
                 const travado = kickoff ? now >= new Date(kickoff).getTime() : false
                 return (
                   <AgendaJogo
                     key={jogoId}
-                    jogo={{ id: jogoId, t1: null, t2: null, kickoff, t1Label: labels[0], t2Label: labels[1] }}
+                    jogo={{ id: jogoId, t1: codes?.[0] ?? null, t2: codes?.[1] ?? null, kickoff, t1Label: labels[0], t2Label: labels[1] }}
                     travado={travado}
                     label={jogoId}
                     onJogoClick={onJogoClick}
