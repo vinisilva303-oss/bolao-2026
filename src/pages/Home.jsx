@@ -19,8 +19,14 @@ export default function Home() {
       await salvarUsuario(result.user)
     } catch (err) {
       if (err.code !== 'auth/popup-closed-by-user') {
-        setErro('Erro ao entrar com Google. Tente novamente.')
-        console.error(err)
+        const msgs = {
+          'auth/unauthorized-domain': 'Domínio não autorizado no Firebase. Adicione o domínio em Authentication → Settings → Authorized domains.',
+          'auth/operation-not-allowed': 'Login com Google não está ativado. Ative em Authentication → Sign-in method → Google.',
+          'auth/popup-blocked': 'Popup bloqueado pelo navegador. Permita popups para este site.',
+          'auth/network-request-failed': 'Erro de rede. Verifique sua conexão.',
+        }
+        setErro(msgs[err.code] || `Erro: ${err.code || err.message}`)
+        console.error('[Auth Error]', err.code, err.message)
       }
     } finally {
       setEntrando(false)
@@ -78,7 +84,7 @@ export default function Home() {
             </h1>
             <p style={{ fontSize: '1.2rem', color: 'var(--texto-muted)', marginBottom: '2.5rem', lineHeight: 1.6 }}>
               Crie um bolão em minutos, compartilhe o link e acompanhe o ranking ao vivo.
-              {!user && ' Grátis para até 10 participantes.'}
+              {!user && ' Totalmente grátis.'}
             </p>
 
             {user ? (
@@ -145,47 +151,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Planos */}
-        <section style={{ padding: '2rem 1rem 4rem' }}>
-          <div className="container">
-            <h2 style={{ textAlign: 'center', marginBottom: '2rem', fontSize: '1.5rem' }}>Planos</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', maxWidth: 680, margin: '0 auto' }}>
-              {/* Free */}
-              <div className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <h3>Free</h3>
-                  <span className="tag-free">Grátis</span>
-                </div>
-                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem', color: 'var(--texto-muted)', fontSize: '0.9rem' }}>
-                  {['✅ 1 bolão ativo', '✅ Até 10 participantes', '✅ Ranking automático', '✅ Compartilha por link', '❌ Painel de resultados', '❌ Exportar ranking'].map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-              {/* Pro */}
-              <div className="card" style={{ borderColor: 'var(--ouro)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <h3>Pro ⭐</h3>
-                  <span className="tag-pro">R$ 29 / bolão</span>
-                </div>
-                <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem', color: 'var(--texto-muted)', fontSize: '0.9rem' }}>
-                  {['✅ Participantes ilimitados', '✅ Painel de resultados', '✅ Exportar ranking PDF', '✅ Badge "Bolão Oficial"', '✅ Suporte via WhatsApp', '✅ Pagamento via Pix'].map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-                {!user && (
-                  <button
-                    className="btn-ouro"
-                    style={{ width: '100%', marginTop: '1.25rem' }}
-                    onClick={handleLogin}
-                  >
-                    Começar agora
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
       </main>
 
       {/* Footer */}

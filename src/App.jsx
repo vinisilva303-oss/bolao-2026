@@ -8,6 +8,7 @@ import BolaoPage from './pages/Bolao'
 import AdminPage from './pages/Admin'
 import MeusBoloes from './pages/MeusBoloes'
 import SuperAdmin from './pages/SuperAdmin'
+import DevPanel from './components/DevPanel'
 
 export const AuthContext = createContext(null)
 export const useAuth = () => useContext(AuthContext)
@@ -49,6 +50,7 @@ function App() {
             <ProtectedRoute><SuperAdmin /></ProtectedRoute>
           } />
         </Routes>
+        {import.meta.env.DEV && <DevPanel />}
       </BrowserRouter>
     </AuthContext.Provider>
   )

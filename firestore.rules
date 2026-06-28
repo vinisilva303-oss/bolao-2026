@@ -11,28 +11,38 @@ service cloud.firestore {
       allow create: if request.auth != null;
       allow update, delete: if request.auth.uid == resource.data.ownerId;
 
+      // Helper: verifica se o caller é o dono do bolão
+      function isOwner() {
+        return request.auth.uid == get(/databases/$(database)/documents/boloes/$(bolaoId)).data.ownerId;
+      }
+
       match /participantes/{partId} {
         allow read: if true;
-        allow create: if true;
-        allow update, delete: if request.auth != null && request.auth.uid == partId;
+        // Participante edita o próprio doc; owner pode deletar qualquer um (para excluir o bolão)
+        allow write: if request.auth != null && (request.auth.uid == partId || isOwner());
       }
 
       match /palpites/{partId} {
         allow read: if true;
-        allow write: if request.auth == null || request.auth.uid == partId;
+        // Participante edita o próprio doc; owner pode deletar qualquer um (para excluir o bolão)
+        allow write: if request.auth != null && (request.auth.uid == partId || isOwner());
       }
 
       match /resultados/{jogoId} {
         allow read: if true;
-        allow write: if request.auth.uid == get(/databases/$(database)/documents/boloes/$(bolaoId)).data.ownerId;
+        allow write: if isOwner();
+      }
+
+      match /mata_mata/{matchId} {
+        allow read: if true;
+        allow write: if isOwner();
       }
     }
 
-    // Resultados globais — escritos pela Cloud Function (admin SDK ignora regras)
-    // Leitura pública; escrita só via backend
+    // Resultados globais — escritos pela Cloud Function ou por qualquer admin autenticado
     match /resultados_globais/{jogoId} {
       allow read: if true;
-      allow write: if false; // apenas Cloud Function via Admin SDK
+      allow write: if request.auth != null;
     }
   }
 }

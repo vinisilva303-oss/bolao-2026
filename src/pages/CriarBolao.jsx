@@ -33,10 +33,10 @@ export default function CriarBolao() {
     <div style={{ minHeight: '100vh', padding: '2rem 1rem' }}>
       <div style={{ maxWidth: 480, margin: '0 auto' }}>
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/meus-boloes')}
           style={{ background: 'none', color: 'var(--texto-muted)', padding: '0.25rem 0', marginBottom: '1.5rem', fontSize: '0.9rem' }}
         >
-          ← Voltar
+          ← Meus bolões
         </button>
 
         <h1 style={{ marginBottom: '0.5rem' }}>Criar Bolão</h1>
@@ -85,9 +85,6 @@ export default function CriarBolao() {
             {criando ? 'Criando...' : '🚀 Criar bolão grátis'}
           </button>
 
-          <p style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--texto-muted)', textAlign: 'center' }}>
-            Plano Free: até 10 participantes · <a href="/">Ver planos</a>
-          </p>
         </form>
       </div>
     </div>

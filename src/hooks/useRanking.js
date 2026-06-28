@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { ouvirTodosPalpites, ouvirResultados, ouvirParticipantes, ouvirResultadosGlobais } from '../lib/firestore'
-import { calcularPontos, AGENDA_GRUPOS } from '../lib/dados'
+import { calcularPontos } from '../lib/dados'
 
 export function useRanking(slug) {
   const [participantes, setParticipantes] = useState([])
@@ -32,10 +32,8 @@ export function useRanking(slug) {
       let exatos = 0
       let resultadosCertos = 0
 
-      for (const jogo of AGENDA_GRUPOS) {
-        const resultado = resultados[jogo.id]
-        if (!resultado) continue
-        const pts = calcularPontos(palp[jogo.id], resultado)
+      for (const [jogoId, resultado] of Object.entries(resultados)) {
+        const pts = calcularPontos(palp[jogoId], resultado)
         pontos += pts
         if (pts === 3) exatos++
         else if (pts === 1) resultadosCertos++
@@ -45,5 +43,5 @@ export function useRanking(slug) {
     })
     .sort((a, b) => b.pontos - a.pontos || b.exatos - a.exatos)
 
-  return { ranking, loading, resultados }
+  return { ranking, loading, resultados, todosPalpites }
 }
