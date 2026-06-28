@@ -107,7 +107,7 @@ function PalpitesForm({ slug, bolao, user, focoJogoId, onFocoConsumido }) {
   const [palpites, setPalpites] = useState({})
   const [mataMataTeams, setMataMataTeams] = useState({})
   const [saveStatus, setSaveStatus] = useState('idle') // 'idle' | 'pending' | 'saving' | 'saved' | 'error'
-  const [setor, setSetor] = useState('grupos')
+  const [setor, setSetor] = useState('matamata')
   const [grupoAberto, setGrupoAberto] = useState('A')
   const [faseAberta, setFaseAberta] = useState('R32')
   const now = useNow()
