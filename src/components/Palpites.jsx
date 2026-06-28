@@ -4,7 +4,7 @@ import { useAuth } from '../App'
 import { auth, googleProvider } from '../lib/firebase'
 import {
   GRUPOS, TIMES, gerarJogosGrupo, formatarHorarioBRT,
-  FASES_MATA_MATA, BRACKET_LABELS, KICKOFF_MAP,
+  FASES_MATA_MATA, BRACKET_LABELS, BRACKET_CODES, KICKOFF_MAP,
   JANELA_1_FIM, JANELA_3_INICIO, R32_CHAVEAMENTO, inferirClassificados,
 } from '../lib/dados'
 
@@ -220,9 +220,13 @@ function PalpitesForm({ slug, bolao, user, focoJogoId, onFocoConsumido }) {
   }
 
   function resolverTime(jogoId, lado) {
+    const knownCod = BRACKET_CODES[jogoId]?.[lado === 't1' ? 0 : 1]
+
     if (cenario === 'jogo_a_jogo') {
       const real = mataMataTeams[jogoId]?.[lado]
-      return real ? { cod: real, origem: 'real' } : { cod: null, origem: 'tbd' }
+      if (real) return { cod: real, origem: 'real' }
+      if (knownCod) return { cod: knownCod, origem: 'real' }
+      return { cod: null, origem: 'tbd' }
     }
     if (janela === 1) {
       const stored = palpites[jogoId]?.[lado]
@@ -236,10 +240,12 @@ function PalpitesForm({ slug, bolao, user, focoJogoId, onFocoConsumido }) {
           if (cod) return { cod, origem: 'inferido' }
         }
       }
+      if (knownCod) return { cod: knownCod, origem: 'real' }
       return { cod: null, origem: 'tbd' }
     }
     const real = mataMataTeams[jogoId]?.[lado]
     if (real) return { cod: real, origem: 'real' }
+    if (knownCod) return { cod: knownCod, origem: 'real' }
     const stored = palpites[jogoId]?.[lado]
     if (stored) return { cod: stored, origem: 'palpite' }
     return { cod: null, origem: 'tbd' }

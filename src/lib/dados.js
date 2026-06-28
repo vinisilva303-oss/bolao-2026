@@ -227,7 +227,7 @@ export function gerarJogosGrupo(grupoId) {
 
 // ── Mata-Mata ──────────────────────────────────────────────
 export const FASES_MATA_MATA = [
-  { id: 'R32', nome: 'Rodada de 32',   jogos: ['R32_01','R32_02','R32_03','R32_04','R32_05','R32_06','R32_07','R32_08','R32_09','R32_10','R32_11','R32_12','R32_13','R32_14','R32_15','R32_16'] },
+  { id: 'R32', nome: 'Segunda Rodada', jogos: ['R32_01','R32_02','R32_03','R32_04','R32_05','R32_06','R32_07','R32_08','R32_09','R32_10','R32_11','R32_12','R32_13','R32_14','R32_15','R32_16'] },
   { id: 'R16', nome: 'Oitavas',        jogos: ['R16_01','R16_02','R16_03','R16_04','R16_05','R16_06','R16_07','R16_08'] },
   { id: 'QF',  nome: 'Quartas',        jogos: ['QF_1','QF_2','QF_3','QF_4'] },
   { id: 'SF',  nome: 'Semifinais',     jogos: ['SF_1','SF_2'] },
