@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../App'
-import { getBolao, ativarPro, listarTodosBoloes, reatribuirDono } from '../lib/firestore'
+import { getBolao, ativarPro } from '../lib/firestore'
 
 const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL
 
@@ -14,9 +14,6 @@ export default function SuperAdmin() {
   const [ativando, setAtivando] = useState(false)
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
-  const [todosBoloes, setTodosBoloes] = useState(null)
-  const [carregandoTodos, setCarregandoTodos] = useState(false)
-  const [reatribuindo, setReatribuindo] = useState(null)
 
   const isAdmin = user?.email === ADMIN_EMAIL
 
@@ -51,33 +48,6 @@ export default function SuperAdmin() {
       console.error(err)
     } finally {
       setAtivando(false)
-    }
-  }
-
-  async function handleListarTodos() {
-    setCarregandoTodos(true)
-    try {
-      const lista = await listarTodosBoloes()
-      setTodosBoloes(lista.sort((a, b) => (b.createdAt?.toMillis?.() ?? 0) - (a.createdAt?.toMillis?.() ?? 0)))
-    } catch (err) {
-      console.error(err)
-      alert('Erro ao listar bolões.')
-    } finally {
-      setCarregandoTodos(false)
-    }
-  }
-
-  async function handleReatribuir(slug) {
-    if (!user) return
-    setReatribuindo(slug)
-    try {
-      await reatribuirDono(slug, user.uid)
-      setTodosBoloes((prev) => prev.map((b) => b.id === slug ? { ...b, ownerId: user.uid } : b))
-    } catch (err) {
-      console.error(err)
-      alert('Erro ao reatribuir. Tente pelo console do Firebase.')
-    } finally {
-      setReatribuindo(null)
     }
   }
 
@@ -151,68 +121,6 @@ export default function SuperAdmin() {
               </div>
             </div>
           )}
-        </div>
-
-        {/* Listar todos os bolões */}
-        <div className="card" style={{ marginBottom: '1.5rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <h2 style={{ fontSize: '1.1rem' }}>Todos os Bolões</h2>
-            <button
-              className="btn-secundario"
-              style={{ padding: '0.4rem 0.875rem', fontSize: '0.85rem' }}
-              onClick={handleListarTodos}
-              disabled={carregandoTodos}
-            >
-              {carregandoTodos ? 'Carregando...' : '🔍 Listar todos'}
-            </button>
-          </div>
-          <p style={{ color: 'var(--texto-muted)', fontSize: '0.8rem', marginBottom: '0.75rem' }}>
-            UID atual: <code style={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>{user?.uid}</code>
-          </p>
-
-          {todosBoloes !== null && todosBoloes.length === 0 && (
-            <p style={{ color: 'var(--texto-muted)', fontSize: '0.875rem' }}>Nenhum bolão no Firestore.</p>
-          )}
-
-          {todosBoloes && todosBoloes.map((b) => {
-            const slug = b.slug || b.id
-            const meuBolao = b.ownerId === user?.uid
-            return (
-              <div key={b.id} style={{
-                background: 'var(--surface-2)', borderRadius: 8, padding: '0.75rem', marginBottom: '0.5rem',
-                border: `1px solid ${meuBolao ? 'var(--verde-escuro)' : 'var(--borda)'}`,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{b.name}</div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--texto-muted)', fontFamily: 'monospace' }}>{slug}</div>
-                    <div style={{ fontSize: '0.7rem', color: meuBolao ? 'var(--verde)' : '#f87171', marginTop: '0.2rem' }}>
-                      {meuBolao ? '✓ seu bolão' : `dono: ${b.ownerId?.slice(0, 12)}…`}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.375rem', flexWrap: 'wrap' }}>
-                    <button
-                      className="btn-secundario"
-                      style={{ padding: '0.3rem 0.625rem', fontSize: '0.78rem' }}
-                      onClick={() => navigate(`/bolao/${slug}`)}
-                    >
-                      Ver
-                    </button>
-                    {!meuBolao && (
-                      <button
-                        className="btn-primario"
-                        style={{ padding: '0.3rem 0.625rem', fontSize: '0.78rem' }}
-                        disabled={reatribuindo === slug}
-                        onClick={() => handleReatribuir(slug)}
-                      >
-                        {reatribuindo === slug ? '...' : 'Assumir dono'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
         </div>
 
         {/* Instruções */}

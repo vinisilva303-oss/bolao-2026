@@ -62,54 +62,17 @@ export async function getBoloesPorOwner(ownerId) {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
 }
 
-export function ouvirBoloesPorOwner(ownerId, callback, onError) {
-  // Sem orderBy para evitar índice composto obrigatório; ordenamos no cliente.
-  const q = query(collection(db, 'boloes'), where('ownerId', '==', ownerId))
-  return onSnapshot(
-    q,
-    (snap) => {
-      const lista = snap.docs
-        .map((d) => ({ id: d.id, ...d.data() }))
-        .sort((a, b) => {
-          const ta = a.createdAt?.toMillis?.() ?? 0
-          const tb = b.createdAt?.toMillis?.() ?? 0
-          return tb - ta
-        })
-      callback(lista)
-    },
-    (err) => {
-      console.error('ouvirBoloesPorOwner:', err)
-      if (onError) onError(err)
-    },
-  )
-}
-
 export async function ativarPro(slug) {
   await updateDoc(doc(db, 'boloes', slug), { plan: 'pro' })
-}
-
-export async function atualizarCenario(slug, cenario) {
-  await updateDoc(doc(db, 'boloes', slug), { cenario })
-}
-
-export async function deletarBolao(slug) {
-  const subs = ['participantes', 'palpites', 'resultados', 'mata_mata']
-  for (const sub of subs) {
-    const snap = await getDocs(collection(db, 'boloes', slug, sub))
-    await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)))
-  }
-  await deleteDoc(doc(db, 'boloes', slug))
 }
 
 // ── Participantes ───────────────────────────────────────────
 export async function entrarNoBolao(slug, participante) {
   const ref = doc(db, 'boloes', slug, 'participantes', participante.id)
-  const snap = await getDoc(ref)
-  if (snap.exists()) {
-    await updateDoc(ref, { name: participante.name })
-  } else {
-    await setDoc(ref, { name: participante.name, joinedAt: serverTimestamp() })
-  }
+  await setDoc(ref, {
+    name: participante.name,
+    joinedAt: serverTimestamp(),
+  })
 }
 
 export function ouvirParticipantes(slug, callback) {
@@ -174,40 +137,10 @@ export function ouvirResultados(slug, callback) {
   })
 }
 
-// ── Mata-Mata — times definidos pelo admin após os grupos ──
-export async function salvarTimesMataMata(slug, matchId, t1, t2) {
-  await setDoc(
-    doc(db, 'boloes', slug, 'mata_mata', matchId),
-    { t1, t2, updatedAt: serverTimestamp() },
-  )
-}
-
-export function ouvirMataMata(slug, callback) {
-  return onSnapshot(collection(db, 'boloes', slug, 'mata_mata'), (snap) => {
-    callback(Object.fromEntries(snap.docs.map((d) => [d.id, d.data()])))
-  })
-}
-
-// ── Resultados Globais (Cloud Function ou painel admin) ──────
+// ── Resultados Globais (preenchidos pela Cloud Function via API-Football) ──
 export function ouvirResultadosGlobais(callback) {
   return onSnapshot(collection(db, 'resultados_globais'), (snap) => {
     const resultados = Object.fromEntries(snap.docs.map((d) => [d.id, d.data()]))
     callback(resultados)
   })
-}
-
-export async function salvarResultadoGlobal(jogoId, g1, g2) {
-  await setDoc(
-    doc(db, 'resultados_globais', jogoId),
-    { g1, g2, fonte: 'admin-painel', manual: true, updatedAt: serverTimestamp() },
-  )
-}
-
-export async function listarTodosBoloes() {
-  const snap = await getDocs(collection(db, 'boloes'))
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-}
-
-export async function reatribuirDono(slug, novoOwnerId) {
-  await updateDoc(doc(db, 'boloes', slug), { ownerId: novoOwnerId })
 }
