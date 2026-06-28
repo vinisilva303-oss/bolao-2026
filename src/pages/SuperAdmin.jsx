@@ -14,7 +14,6 @@ export default function SuperAdmin() {
   const [ativando, setAtivando] = useState(false)
   const [erro, setErro] = useState('')
   const [sucesso, setSucesso] = useState('')
-
   const isAdmin = user?.email === ADMIN_EMAIL
 
   async function buscar(e) {
