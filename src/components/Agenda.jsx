@@ -77,7 +77,7 @@ function AgendaCronologica({ now, hojeStr, onJogoClick, palpites }) {
           t2: codes ? codes[1] : null,
           kickoff,
           t1Label: labels[0], t2Label: labels[1],
-          label: `${fase.nome} · ${jogoId}`,
+          label: fase.nome,
         })
       }
     }
@@ -178,7 +178,7 @@ function AgendaMataMata({ now, hojeStr, onJogoClick, palpites }) {
                     key={jogoId}
                     jogo={{ id: jogoId, t1: codes?.[0] ?? null, t2: codes?.[1] ?? null, kickoff, t1Label: labels[0], t2Label: labels[1] }}
                     travado={travado}
-                    label={jogoId}
+                    label={fase.nome}
                     onJogoClick={onJogoClick}
                     completo={palpiteCompleto(palpites[jogoId])}
                   />
